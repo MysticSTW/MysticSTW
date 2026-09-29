@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340">
+  <!-- One loop is 6s: sweeps in left to right while rising, holds, fades out upwards. -->
+  <defs>
+    <clipPath id="reveal">
+      <rect x="0" y="0" width="0" height="340">
+        <animate attributeName="width" dur="6s" repeatCount="indefinite"
+          values="0;0;1200;1200" keyTimes="0;0.04;0.3;1"/>
+      </rect>
+    </clipPath>
+    <filter id="glow" x="-10%" y="-60%" width="120%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#reveal)">
+    <g opacity="0">
+      <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+        values="0;0;1;1;0;0" keyTimes="0;0.04;0.26;0.8;0.94;1"/>
+      <animateTransform attributeName="transform" type="translate" dur="6s" repeatCount="indefinite"
+        values="0 34;0 34;0 0;0 0;0 -26;0 -26" keyTimes="0;0.04;0.3;0.8;0.94;1"/>
+
+      <text x="600" y="186" text-anchor="middle" filter="url(#glow)"
+        font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-weight="900"
+        font-size="104" letter-spacing="4" fill="#ffffff">HELLO IM MYSTIC</text>
+
+      <rect x="600" y="232" width="0" height="7" rx="3.5" fill="#ffffff">
+        <animate attributeName="width" dur="6s" repeatCount="indefinite"
+          values="0;0;240;240;0;0" keyTimes="0;0.2;0.38;0.72;0.86;1"/>
+        <animate attributeName="x" dur="6s" repeatCount="indefinite"
+          values="600;600;480;480;600;600" keyTimes="0;0.2;0.38;0.72;0.86;1"/>
+      </rect>
+    </g>
+  </g>
+</svg>
