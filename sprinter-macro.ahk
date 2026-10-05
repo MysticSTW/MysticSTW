@@ -6,20 +6,20 @@
 ;
 ; Number-row keys are used so laptop / 60% keyboard users don't need Fn.
 ;
-; How it avoids tripping: the two arrows are never held at the same time and
-; never change twice inside one game frame. Each step releases one arrow and
-; presses the other in the same instant (Left -> Right -> Left ...), one step
-; per frame, on a precise fixed schedule. That's one stride every frame, which
-; is the fastest the game can read, with no overlap and no doubled presses.
+; Maximum speed without tripping: the game can only read one key change per
+; frame. Two changes in the same frame look like both arrows at once (or the
+; same arrow twice) and the runner trips. So this locks every stride to the
+; screen's refresh (DwmFlush waits for the next frame): exactly one stride per
+; frame, never two, never both arrows held. That's the fastest the game can
+; register. If the game runs at a lower fps than your monitor (e.g. 60 fps on
+; a 144 Hz screen), press 2 to use one stride every 2 or 3 frames.
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 ProcessSetPriority "High"
 SendMode "Event"
 SetKeyDelay -1, -1
-DllCall("Winmm\timeBeginPeriod", "UInt", 1)  ; 1 ms timer resolution
-DllCall("QueryPerformanceFrequency", "Int64*", &Freq := 0)
 
-StepMs := 17              ; time per stride; 17 ms = one frame at 60 fps
+FramesPerStride := 1      ; 1 = one stride every screen frame (max speed)
 running := false
 
 1:: {
@@ -31,15 +31,15 @@ running := false
 }
 
 2:: {
-    global StepMs
-    StepMs += 1
-    Show(StepMs " ms per stride")
+    global FramesPerStride
+    FramesPerStride += 1
+    Show("1 stride every " FramesPerStride " frames")
 }
 
 3:: {
-    global StepMs
-    StepMs := Max(5, StepMs - 1)
-    Show(StepMs " ms per stride")
+    global FramesPerStride
+    FramesPerStride := Max(1, FramesPerStride - 1)
+    Show(FramesPerStride = 1 ? "max speed (1 stride per frame)" : "1 stride every " FramesPerStride " frames")
 }
 
 4:: {
@@ -48,40 +48,27 @@ running := false
 }
 
 Spam() {
-    global running, StepMs, Freq
+    global running, FramesPerStride
     key := "Left"
+    WaitFrame()
     Send "{Left down}"
-    next := Now()
     while running {
-        next += StepMs * Freq // 1000
-        if Now() > next          ; fell behind (e.g. a lag spike): restart the
-            next := Now()        ; schedule instead of bursting to catch up
-        WaitUntil(next)
+        loop FramesPerStride
+            WaitFrame()
         other := (key = "Left") ? "Right" : "Left"
-        Send "{" key " up}{" other " down}"   ; release first, so never both down
+        Send "{" key " up}{" other " down}"   ; release first, never both down
         key := other
     }
     Send "{" key " up}"
 }
 
-; Precise wait: sleep while far away, then spin for the last ~2 ms.
-WaitUntil(t) {
-    global Freq
-    loop {
-        remaining := t - Now()
-        if remaining <= 0
-            return
-        if remaining * 1000 // Freq > 2
-            DllCall("Sleep", "UInt", 1)
-    }
-}
-
-Now() {
-    DllCall("QueryPerformanceCounter", "Int64*", &t := 0)
-    return t
+; Block until the next screen refresh.
+WaitFrame() {
+    if DllCall("dwmapi\DwmFlush") != 0     ; desktop compositor off: ~60 fps fallback
+        DllCall("Sleep", "UInt", 16)
 }
 
 Show(msg) {
     ToolTip "Sprinter macro: " msg
-    SetTimer () => ToolTip(), -1000
+    SetTimer () => ToolTip(), -1200
 }
