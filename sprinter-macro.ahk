@@ -1,18 +1,20 @@
 ; Sprinter arrow-key masher (AutoHotkey v2)
 ;   F1  = start / stop spamming Left, Right, Left, Right...
-;   Esc = quit the script
+;   F2  = slower (use if the runner stutters or doesn't move)
+;   F3  = faster
+;   F4  = quit the script
 ;
-; If the game misses presses, raise HoldMs and/or GapMs a little (e.g. 10-20).
+; Games read the keyboard once per frame (~16 ms at 60 fps). A key that is
+; pressed and released inside one frame is never seen, so each key is held
+; for at least a frame.
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 ProcessSetPriority "High"
-SendMode "Event"          ; games read Event mode reliably
-SetKeyDelay -1, -1        ; no built-in delay; we control timing ourselves
+SendMode "Event"
+SetKeyDelay -1, -1
 DllCall("Winmm\timeBeginPeriod", "UInt", 1)  ; 1 ms timer resolution
 
-HoldMs := 5               ; how long each key is held down
-GapMs  := 0               ; pause after releasing a key
-
+HoldMs := 20              ; how long each key is held down
 running := false
 
 F1:: {
@@ -20,14 +22,25 @@ F1:: {
     running := !running
     if running
         SetTimer Spam, -1
-    ToolTip running ? "Sprinter macro: ON" : "Sprinter macro: OFF"
-    SetTimer () => ToolTip(), -800
+    Show(running ? "ON" : "OFF")
 }
 
-Esc::ExitApp
+F2:: {
+    global HoldMs
+    HoldMs += 5
+    Show("hold " HoldMs " ms")
+}
+
+F3:: {
+    global HoldMs
+    HoldMs := Max(5, HoldMs - 5)
+    Show("hold " HoldMs " ms")
+}
+
+F4::ExitApp
 
 Spam() {
-    global running, HoldMs, GapMs
+    global running
     while running {
         Tap("Left")
         Tap("Right")
@@ -35,10 +48,14 @@ Spam() {
 }
 
 Tap(key) {
-    global HoldMs, GapMs
+    global HoldMs
     Send "{" key " down}"
-    DllCall("Sleep", "UInt", HoldMs)   ; ms-accurate sleep (AHK's Sleep rounds to ~15 ms)
+    DllCall("Sleep", "UInt", HoldMs)
     Send "{" key " up}"
-    if GapMs
-        DllCall("Sleep", "UInt", GapMs)
+    DllCall("Sleep", "UInt", HoldMs)   ; released for a frame too, so the game sees the change
+}
+
+Show(msg) {
+    ToolTip "Sprinter macro: " msg
+    SetTimer () => ToolTip(), -1000
 }
