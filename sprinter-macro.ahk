@@ -1,8 +1,10 @@
 ; Sprinter arrow-key masher (AutoHotkey v2)
-;   F1  = start / stop spamming Left, Right, Left, Right...
-;   F2  = slower (use if the runner stutters or doesn't move)
-;   F3  = faster
-;   F4  = quit the script
+;   1 = start / stop spamming Left, Right, Left, Right...
+;   2 = slower (use if the runner stutters or doesn't move)
+;   3 = faster
+;   4 = quit the script
+;
+; Number-row keys are used so laptop users don't need to hold Fn.
 ;
 ; Games read the keyboard once per frame (~16 ms at 60 fps). A key that is
 ; pressed and released inside one frame is never seen, so each key is held
@@ -17,7 +19,7 @@ DllCall("Winmm\timeBeginPeriod", "UInt", 1)  ; 1 ms timer resolution
 HoldMs := 20              ; how long each key is held down
 running := false
 
-F1:: {
+1:: {
     global running
     running := !running
     if running
@@ -25,19 +27,19 @@ F1:: {
     Show(running ? "ON" : "OFF")
 }
 
-F2:: {
+2:: {
     global HoldMs
     HoldMs += 5
     Show("hold " HoldMs " ms")
 }
 
-F3:: {
+3:: {
     global HoldMs
     HoldMs := Max(5, HoldMs - 5)
     Show("hold " HoldMs " ms")
 }
 
-F4::ExitApp
+4::ExitApp
 
 Spam() {
     global running
